@@ -9,6 +9,7 @@ Finally, remember to add the component to the application.
 */
 
 import { defineStore } from "pinia";
+import http from "../router/axios";
 
 export const useDialogStore = defineStore("dialog", {
 	state: () => ({

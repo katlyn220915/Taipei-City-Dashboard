@@ -22,6 +22,7 @@ const componentIndex = route.query.index;
 
 const mousePosition = ref({ x: null, y: null });
 const showStatisticsTooltip = ref(false);
+const showMobileStatisticsTooltip = ref(false);
 
 const tooltipPosition = computed(() => {
 	if (!mousePosition.value.x || !mousePosition.value.y) {
@@ -41,6 +42,9 @@ function updateMouseLocation(e) {
 }
 function changeShowStatisticsTooltipState(state) {
 	showStatisticsTooltip.value = state;
+}
+function changeShowMobileStatisticsTooltipState(){
+	showMobileStatisticsTooltip.value = !showMobileStatisticsTooltip.value
 }
 
 function getLinkTag(link, index) {
@@ -148,7 +152,17 @@ function handleCloseDialog() {
 			@mousemove="updateMouseLocation"
 			@mouseleave="changeShowStatisticsTooltipState(false)" 
 		  >
-			<h3>動態資訊</h3>
+		    <div class="moreinfo-info-statistics-title">
+				<h3>動態資訊</h3>
+				<button :class="{'hide-button': !authStore.isMobileDevice}" @click="changeShowMobileStatisticsTooltipState">
+					<span class="icon">info</span>
+				</button>
+				<div v-if="showMobileStatisticsTooltip" class="chart-tooltip mobile-tooltip">
+					<p>來源：系統日誌分析</p>
+					<p>數據計算開始時間：{{`${dayjs(contentStore.currentComponentDynamicInfo.measured_start).format('YYYY/MM/DD HH:mm:ss')}`}}</p>
+					<p>數據計算結束時間：{{`${dayjs(contentStore.currentComponentDynamicInfo.measured_end).format('YYYY/MM/DD HH:mm:ss')}`}}</p>
+				</div>
+			</div>
 			<div class="moreinfo-info-statistics-content">
 				<p><span class="icon">visibility</span>組件點閱人數：{{`${contentStore.currentComponentDynamicInfo.total_count}`}} 次</p>
 				<p><span class="icon">timer</span>平均停留時間：{{`${contentStore.currentComponentDynamicInfo.average_duration_sec}`}} 秒</p>
@@ -302,6 +316,19 @@ function handleCloseDialog() {
 		}
 
 		&-statistics {
+			position: relative;
+			overflow: visible;
+
+			&-title {
+				display: flex;
+				align-items: center;
+				gap: 3px;
+			}
+
+			h3 {
+				margin-bottom: 4px;
+			}
+
 			p {
 				display: flex;
 				align-items: center;
@@ -313,11 +340,22 @@ function handleCloseDialog() {
 			span {
 				font-family: var(--font-icon);
 				font-size: var(--font-ms);
-
 			}
 
-			h3 {
-				margin-bottom: 4px;
+			.hide-button {
+				display: none;
+			}
+
+			.mobile-tooltip {
+				position: absolute;
+				top: -50px;
+				left: 70px;
+				z-index: 100;
+
+				p {
+					color: var(--color-normal-text);
+				}
+
 			}
 		}
 
