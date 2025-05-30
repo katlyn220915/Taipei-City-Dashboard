@@ -64,6 +64,7 @@ export const useContentStore = defineStore("content", {
 		// Stores whether an error occurred
 		error: false,
 		ws: false,
+		currentComponentDynamicInfo: null
 	}),
 	getters: {},
 	actions: {
@@ -613,6 +614,25 @@ export const useContentStore = defineStore("content", {
 				}
 				this.loading = false;
 			}
+		},
+
+		async getComponentDynamicInfo(component_id) {
+			// const response = await http.get(`/api/v1/event/component/${component_id}?minutes=60`)
+			const response = {
+					"data": {
+					"status": "success",
+					"data": {
+						"index": component_id,
+						"total_count": 1000, //時間內總點擊數
+						"average_duration_sec": 245, //平均停留時間 1s
+						"measured_over_mintus": 60, //透過多久來平均minutes
+						"measured_start": "2024-06-12T06:02:41.642Z",
+						"measured_end": "2024-06-12T06:02:41.642Z",
+					}
+					}
+				}
+			const data = response.data.data || {};
+			this.currentComponentDynamicInfo = data;
 		},
 
 		/* Common Methods to Edit Dashboards */

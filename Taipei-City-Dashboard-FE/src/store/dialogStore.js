@@ -34,6 +34,7 @@ export const useDialogStore = defineStore("dialog", {
 			mobileLayers: false,
 			mobileNavigation: false,
 			moreInfo: false,
+			componentInfoEnterTime: "",
 			notificationBar: false,
 			reportIssue: false,
 			userSettings: false,
@@ -99,6 +100,7 @@ export const useDialogStore = defineStore("dialog", {
 		showMoreInfo(content) {
 			this.showDialog("moreInfo");
 			this.moreInfoContent = content;
+			this.setComponentInfoEnterTime();
 		},
 		// Show the report issue dialog and enter the id and name of the component of origin
 		showReportIssue(id, index, name) {
@@ -108,6 +110,23 @@ export const useDialogStore = defineStore("dialog", {
 				index: index,
 				name: name,
 			};
+		},
+		setComponentInfoEnterTime() {
+			this.componentInfoEnterTime = new Date();
+		},
+		async sendComponentViewEvent(deviceId, index) {
+			const leaveTime = new Date();
+			const eventPayload = {
+				component_index: this.moreInfoContent.index ?? index,
+				component_name:  this.moreInfoContent.name,
+				event: {
+					enter_time: this.componentInfoEnterTime.toISOString(),
+					leave_time: leaveTime.toISOString(),
+					device_id: deviceId,
+				}
+			}
+		
+			await http.post(`/api/v1/event/component/push`, eventPayload);
 		},
 	},
 });

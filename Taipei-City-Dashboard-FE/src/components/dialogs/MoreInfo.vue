@@ -10,10 +10,38 @@ import DialogContainer from "./DialogContainer.vue";
 import HistoryChart from "../charts/HistoryChart.vue";
 import DownloadData from "./DownloadData.vue";
 import EmbedComponent from "./EmbedComponent.vue";
+import { computed, ref } from "vue";
+import { useRoute } from "vue-router";
+import dayjs from "dayjs";
 
 const dialogStore = useDialogStore();
 const contentStore = useContentStore();
 const authStore = useAuthStore();
+const route = useRoute();
+const componentIndex = route.query.index;
+
+const mousePosition = ref({ x: null, y: null });
+const showStatisticsTooltip = ref(false);
+
+const tooltipPosition = computed(() => {
+	if (!mousePosition.value.x || !mousePosition.value.y) {
+		return {
+			left: "-1000px",
+			top: "-1000px",
+		};
+	}
+	return {
+		left: `${mousePosition.value.x - 40}px`,
+		top: `${mousePosition.value.y - 100}px`,
+	};
+});
+function updateMouseLocation(e) {
+	mousePosition.value.x = e.pageX;
+	mousePosition.value.y = e.pageY;
+}
+function changeShowStatisticsTooltipState(state) {
+	showStatisticsTooltip.value = state;
+}
 
 function getLinkTag(link, index) {
 	if (link.includes("data.taipei")) {
@@ -28,12 +56,18 @@ function getLinkTag(link, index) {
 		return `資料集 - ${index + 1} (其他)`;
 	}
 }
+
+function handleCloseDialog() {
+	const deviceId = authStore.getDeviceID();
+	dialogStore.sendComponentViewEvent(deviceId, componentIndex)
+	dialogStore.hideAllDialogs()
+}
 </script>
 
 <template>
   <DialogContainer
     :dialog="`moreInfo`"
-    @on-close="dialogStore.hideAllDialogs"
+    @on-close="handleCloseDialog"
   >
     <div class="moreinfo">
       <DashboardComponent
@@ -109,6 +143,17 @@ function getLinkTag(link, index) {
               </div>
             </div>
           </div>
+		  <div v-if="contentStore.currentComponentDynamicInfo" class="moreinfo-info-statistics"
+			@mouseenter="changeShowStatisticsTooltipState(true)"
+			@mousemove="updateMouseLocation"
+			@mouseleave="changeShowStatisticsTooltipState(false)" 
+		  >
+			<h3>動態資訊</h3>
+			<div class="moreinfo-info-statistics-content">
+				<p><span class="icon">visibility</span>組件點閱人數：{{`${contentStore.currentComponentDynamicInfo.total_count}`}} 次</p>
+				<p><span class="icon">timer</span>平均停留時間：{{`${contentStore.currentComponentDynamicInfo.average_duration_sec}`}} 秒</p>
+			</div>
+		  </div>
         </div>
         <div class="moreinfo-info-control">
           <button
@@ -141,6 +186,13 @@ function getLinkTag(link, index) {
       </div>
     </div>
   </DialogContainer>
+  <Teleport to="body">
+	<div v-if="showStatisticsTooltip && contentStore.currentComponentDynamicInfo" class="chart-tooltip tooltip" :style="tooltipPosition">
+		<p>來源：系統日誌分析</p>
+		<p>數據計算開始時間：{{`${dayjs(contentStore.currentComponentDynamicInfo.measured_start).format('YYYY/MM/DD HH:mm:ss')}`}}</p>
+		<p>數據計算結束時間：{{`${dayjs(contentStore.currentComponentDynamicInfo.measured_end).format('YYYY/MM/DD HH:mm:ss')}`}}</p>
+	</div>
+  </Teleport>
 </template>
 
 <style scoped lang="scss">
@@ -249,6 +301,26 @@ function getLinkTag(link, index) {
 			}
 		}
 
+		&-statistics {
+			p {
+				display: flex;
+				align-items: center;
+				gap: 4px;
+				
+				margin-bottom: 1px;
+			}
+
+			span {
+				font-family: var(--font-icon);
+				font-size: var(--font-ms);
+
+			}
+
+			h3 {
+				margin-bottom: 4px;
+			}
+		}
+
 		&-control {
 			display: flex;
 			align-items: flex-end;
@@ -277,5 +349,11 @@ function getLinkTag(link, index) {
 			}
 		}
 	}
+}
+
+.tooltip {
+	position: fixed;
+	box-shadow: 0px 0px 5px black;
+	z-index: 30;
 }
 </style>
